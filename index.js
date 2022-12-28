@@ -13,8 +13,11 @@ app.use(cors());
 app.use(express.json());
 
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "https://issuesmanagerfrontend.vercel.app"); // update to match the domain you will make the request from
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  const allowedOrigins = ['https://issuesmanagerfrontend.vercel.app','http://localhost:3000'];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+}    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   });
   
