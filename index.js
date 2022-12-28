@@ -122,6 +122,25 @@ app.put("/updateissue/:id",async(req,res)=>{
     } 
 })
 
+app.delete("/deleteresolved",async (req,res)=>{
+  const del = await client.db("HelpDesk").collection("Issues").deleteMany({status:"resolved"})
+  if(del){
+    res.status(200).send({msg:"queries deleted"})
+  }
+})
+
+app.get("/uniqueusers", async (req,res)=>{
+  const users = await client.db("HelpDesk").collection("Users").distinct('name')
+  const usersnoadmin = await client.db("HelpDesk").collection("Users").distinct('name',{admin:false})
+  const allAdmins = await  client.db("HelpDesk").collection("Users").distinct('name',{admin:true})
+
+  if (users) {
+    res.status(200).send({users, usersnoadmin,allAdmins}) 
+  } else {
+    res.status(200).send({msg:'no users found'})    
+  }
+})
+
 //sign in sign up services
 
 async function hashedPassword(password) {
