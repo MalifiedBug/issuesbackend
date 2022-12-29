@@ -141,6 +141,20 @@ app.get("/uniqueusers", async (req,res)=>{
   }
 })
 
+app.put("/addadmin/:name", async(req,res)=>{
+  const name = req.params['name']
+  const addadmin = await client.db("HelpDesk").collection("Users").updateOne({name},{$set:{admin:true}})
+  res.status(200).send({msg:"admin added"})
+  console.log(addadmin)
+})
+
+app.put("/deladmin/:name", async(req,res)=>{
+  const name = req.params['name']
+  const deladmin = await client.db("HelpDesk").collection("Users").updateOne({name},{$set:{admin:false}})
+  res.status(200).send({msg:"admin deleted"})
+  console.log(deladmin)
+})
+
 //sign in sign up services
 
 async function hashedPassword(password) {
