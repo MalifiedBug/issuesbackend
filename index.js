@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv' ;
 import { ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken';
+import Razorpay from 'razorpay';
 
 
 dotenv.config();
@@ -205,6 +206,72 @@ app.post("/signup", async function (request, response) {
       response.status(200).send({ msg: "no user found" });
     }
   });
+
+  // payment
+
+  app.post("/orders", async(req,res)=>{
+    try {
+      const instance = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_SECRET
+      });
+      const options = {
+        amount:500000,
+        currency: "INR",
+        receipt: "receipt order no 777"
+      }  
+      
+      console.log(options)
+      
+      const order = await instance.orders.create(options)
+      console.log(order)
+
+      if(!order){return res.status(200).send({msg:"Something went wrong"})}
+
+      res.status(200).send(order);     
+
+    } catch (error) {
+      console.log("entered error block")
+      res.status(200).send({error,msg:"entered error block"})      
+    }
+  })
+
+  app.post("/success", async (req, res)=>{
+    try {
+      // getting the details back from our font-end
+      const {
+        orderCreationId,
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature,
+    } = req.body;
+
+     // Creating our own digest
+        // The format should be like this:
+        // digest = hmac_sha256(orderCreationId + "|" + razorpayPaymentId, secret);
+        const shasum = crypto.createHmac("sha256", "w2lBtgmeuDUfnJVp43UpcaiT");
+
+        shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+
+        const digest = shasum.digest("hex");
+
+        // comaparing our digest with the actual signature
+        if (digest !== razorpaySignature)
+            return res.status(400).json({ msg: "Transaction not legit!" });
+
+        // THE PAYMENT IS LEGIT & VERIFIED
+        // YOU CAN SAVE THE DETAILS IN YOUR DATABASE IF YOU WANT
+      
+        res.status(200).send({
+          msg: "success",
+            orderId: razorpayOrderId,
+            paymentId: razorpayPaymentId,
+        })
+            
+    } catch (error) {
+      res.status(200).send(error)      
+    }
+  })
  
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
