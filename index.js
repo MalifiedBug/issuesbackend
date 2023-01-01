@@ -178,7 +178,7 @@ app.post("/signup", async function (request, response) {
       let result = await client
         .db("HelpDesk")
         .collection("Users")
-        .insertOne({ name,email: email, password: hashedPass, admin: false });
+        .insertOne({ name,email: email, password: hashedPass, admin: false, doj: newdate });
       response.send({ msg: "user added",name, email, result });
     }
   });
@@ -209,14 +209,24 @@ app.post("/signup", async function (request, response) {
 
   // payment
 
-  app.post("/orders", async(req,res)=>{
+  app.post("/orders/:id", async(req,res)=>{
+    const id = req.params.id;
+    console.log(id)
+    let amount = 0
+    if(id==='1'){
+      amount = 120000
+      console.log(amount)
+    }else {
+      amount = 220000
+      console.log(amount)
+    }
     try {
       const instance = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_SECRET
       });
       const options = {
-        amount:500000,
+        amount:amount,
         currency: "INR",
         receipt: "receipt order no 777"
       }  
@@ -238,6 +248,7 @@ app.post("/signup", async function (request, response) {
 
   app.post("/success", async (req, res)=>{
     try {
+     
       // getting the details back from our font-end
       const {
         orderCreationId,
@@ -246,18 +257,27 @@ app.post("/signup", async function (request, response) {
         razorpaySignature,
     } = req.body;
 
+
      // Creating our own digest
         // The format should be like this:
         // digest = hmac_sha256(orderCreationId + "|" + razorpayPaymentId, secret);
         const shasum = crypto.createHmac("sha256", "w2lBtgmeuDUfnJVp43UpcaiT");
 
-        shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+        console.log(shasum)
+        
+        shasum.update(`${orderCreationId}|${razorpayPaymentId}, ${process.env.RAZORPAY_SECRET}`);
+
+        console.log("shasum updated")
 
         const digest = shasum.digest("hex");
 
+
         // comaparing our digest with the actual signature
         if (digest !== razorpaySignature)
+           { 
+            console.log("signature varification failed")
             return res.status(400).json({ msg: "Transaction not legit!" });
+          }
 
         // THE PAYMENT IS LEGIT & VERIFIED
         // YOU CAN SAVE THE DETAILS IN YOUR DATABASE IF YOU WANT
@@ -266,9 +286,9 @@ app.post("/signup", async function (request, response) {
           msg: "success",
             orderId: razorpayOrderId,
             paymentId: razorpayPaymentId,
-        })
-            
+        })            
     } catch (error) {
+      console.log("entered error bloc")
       res.status(200).send(error)      
     }
   })
